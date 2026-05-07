@@ -458,3 +458,18 @@ git 状态：
 
 - 提交 `evaluate_comparison.py`、`tools/smoke_check_estimator.py` 和本 handoff 更新。
 - 后续可规划正式评估：多 episode、多 seed、固定扰动设置，并分别报告 `Legacy231`、`Baseline234`、`Estimator`。
+
+## 14. 2026-05-07 总体进度与正式评估入口
+
+已完成：
+
+- `b16a84c Add legacy baseline evaluation path` 已提交。
+- `PROJECT_PROGRESS_TODO.md` 已更新为当前总体进度表：项目约 70%，系统搭建、工程验证、评估语义修正已完成，正式实验和结果分析待做。
+- 新增 `FORMAL_EVALUATION_PLAN.md`，固定正式评估的三组对象、指标、最小 formal run 命令和结果解释规则。
+
+下一步入口：
+
+- 先跑 `.\run_tests.bat quick`。
+- 再沙盒外跑 `FORMAL_EVALUATION_PLAN.md` 中的 minimum formal run：
+  - `evaluate_comparison.py 5 --agents 100 --steps 50 --terrain-rows 3 --terrain-cols 3 --include-legacy`
+- 只有正式实验多次结果稳定时，才写 estimator 性能提升结论。
