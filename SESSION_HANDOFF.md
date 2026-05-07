@@ -473,3 +473,18 @@ git 状态：
 - 再沙盒外跑 `FORMAL_EVALUATION_PLAN.md` 中的 minimum formal run：
   - `evaluate_comparison.py 5 --agents 100 --steps 50 --terrain-rows 3 --terrain-cols 3 --include-legacy`
 - 只有正式实验多次结果稳定时，才写 estimator 性能提升结论。
+
+## 15. 2026-05-07 Formal Evaluation Plan 提交后状态
+
+已完成：
+
+- `acda0d9 Document formal evaluation plan` 已提交。
+- `PROJECT_PROGRESS_TODO.md` 已同步到当前状态：正式实验设计基本完成，下一步是运行 minimum formal run。
+- `FORMAL_EVALUATION_PLAN.md` 已记录当前文档基线 commit，并继续作为正式评估入口。
+
+下一步入口：
+
+- 必跑 `.\run_tests.bat quick`。
+- 沙盒外运行 minimum formal run：
+  - `evaluate_comparison.py 5 --agents 100 --steps 50 --terrain-rows 3 --terrain-cols 3 --include-legacy`
+- 将结果按 `Legacy231`、`Baseline234`、`Estimator` 分别记录；仍不得把单次 formal run 写成最终性能结论。
