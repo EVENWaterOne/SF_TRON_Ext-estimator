@@ -277,10 +277,10 @@ reward: -0.11173828691244125
 
 git 状态：
 
-- 当前新 git 仓库基本所有文件仍是 untracked。
-- 后续提交前需要整理 `.gitignore`。
-- `__pycache__`、测试 checkpoint、训练日志不应提交。
-- 大模型文件是否提交需要单独决定。
+- 首次提交已完成，基线 commit 为 `128671e Initial estimator integration baseline`。
+- 当前 tracked 工作区干净，剩余显示项均为 ignored 验证产物或本机链接。
+- `__pycache__`、`artifacts/`、`training_log.csv`、测试 checkpoint、`SF_TRON_Ext/model/` 和 `isaaclab_repo/` 不进入提交。
+- 根目录 `model/...` 已作为当前运行资产源纳入首次提交。
 
 环境风险：
 
@@ -298,14 +298,15 @@ git 状态：
 
 建议下一步按这个顺序做：
 
-1. 先清理 git 状态。
-   - 确认哪些模型权重要提交。
-   - 确认是否删除或忽略 `__pycache__`、`training_log.csv`、测试 checkpoint。
-   - 更新 `.gitignore`，避免后续误提交。
+1. 先确认提交后基线。
+   - 重新跑 `.\run_tests.bat quick`。
+   - 确认 tracked 工作区仍然干净，ignored 产物没有进入提交。
+   - 不在 Codex 沙盒内跑 Isaac Sim full/smoke，避免 cache 写权限造成假卡住。
 
 2. 跑一次更长但仍小规模的训练 sanity check。
-   - 例如 `agents_num=100`、`maximum_step=50`、`episode=5~20`。
-   - 观察 reward、estimator loss、fall/reset 情况。
+   - 建议 `agents_num=100`、`maximum_step=50`、`episode=20`。
+   - 观察 reward、estimator loss、fall/reset、NaN 和 checkpoint 写入情况。
+   - 该阶段只验证链路稳定性，不宣称性能提升或 sim-to-real 改善。
 
 3. 验证外力标签是否真的稳定。
    - 记录某几个 agent 的 `external_force_label`。
@@ -344,7 +345,7 @@ git 状态：
 注意：
 
 - 完整 Isaac Sim 类测试需要写 Isaac/Kit/GPU cache。Codex 沙盒内运行会因为不能写 `E:\IsaacSim-5.1.0\kit\cache` 等目录而卡住或报 cache 错；这类命令需要在沙盒外运行。
-- `model/` 与 `SF_TRON_Ext/model/` 大部分资产重复；当前运行配置使用根目录 `model/...`。Estimator 新权重只存在于根目录 `model/NN_Model`。本轮没有删除任何重复资产，提交前仍需人工决定保留策略。
+- `model/` 与 `SF_TRON_Ext/model/` 大部分资产重复；当前运行配置使用根目录 `model/...`。Estimator 新权重只存在于根目录 `model/NN_Model`。本轮没有删除任何重复资产，后续如要统一路径应单独规划。
 
 ## 10. 提交边界收尾记录
 
@@ -368,7 +369,7 @@ git 状态：
   - `estimator.pth`
 - 没有只存在于 `SF_TRON_Ext/model/` 的文件。
 
-当前默认策略：不盲删任何模型目录。提交模型资产前必须先明确选择：
+当前默认策略：不盲删任何模型目录。首次提交已选择根目录 `model/` 作为运行资产源；后续如要清理重复资产，应单独明确选择：
 
 1. 以根目录 `model/` 作为运行资产源。
 2. 改配置统一到 `SF_TRON_Ext/model/...` 并补齐 estimator 资产。
@@ -385,10 +386,42 @@ git 状态：
 - `isaaclab_repo/` 是 junction，指向 `E:\SF_TRON_Ext-main\isaaclab`，默认忽略，不提交到本仓库。
 - `model/NN_Model/*_ckpt*.pth` 仍视为测试 checkpoint，不提交。
 
-提交时重点 review 根目录 `model/NN_Model` 中这些 estimator runtime 文件：
+首次提交已纳入根目录 `model/NN_Model` 中这些 estimator runtime 文件：
 
 - `actor1_est.pth`
 - `actor1_est_f.pth`
 - `critic1_est.pth`
 - `critic1_est_f.pth`
 - `estimator.pth`
+
+## 12. 2026-05-07 首次提交后状态
+
+已完成：
+
+- 首次提交已创建：`128671e Initial estimator integration baseline`。
+- 提交前 `.\run_tests.bat quick` 已通过。
+- 根目录 `model/...` 已作为当前运行资产源提交。
+- 当前 tracked 工作区干净，剩余状态项均为 ignored 产物或本机 junction。
+- 提交后 `.\run_tests.bat quick` 已重新通过。
+- 提交后 20 episode sanity check 已通过：`100 agents x 50 steps x 20 episodes`，无 NaN，`reward_mean_avg=0.030518`，`estimator_loss_last=346.513184`，`fall_rate_avg=0.029230`。
+- 提交后评估 smoke 已通过：`evaluate_comparison.py 1 --agents 10 --steps 10 --terrain-rows 3 --terrain-cols 3` 输出 comparison table；baseline 仍定义为 234 维 estimator-input policy 下的 `f_hat=0`。
+
+当前 ignored 项包括：
+
+- `artifacts/`
+- `training_log.csv`
+- `__pycache__/`
+- `model/NN_Model/*_ckpt*.pth`
+- `SF_TRON_Ext/model/`
+- `isaaclab_repo/`
+
+下一步入口：
+
+- 先 review 并提交本次 `SESSION_HANDOFF.md` 更新。
+- 下一步可选择更长 sanity check 或 legacy baseline 设计。
+- 以上短验证结果只记录链路稳定性和脚本语义，不作为 estimator 性能提升结论。
+
+注意：
+
+- Isaac Sim 脚本直接用 `E:\IsaacSim-5.1.0\python.bat` 运行时，需要显式设置项目 `PYTHONPATH`，否则会报 `ModuleNotFoundError: No module named 'isaaclab.app'`。
+- 已验证的沙盒外命令使用了 `PYTHONPATH` 指向本仓库和 `isaaclab_repo\source\...` 各模块。
