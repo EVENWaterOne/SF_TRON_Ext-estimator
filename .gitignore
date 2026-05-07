@@ -6,6 +6,7 @@ __pycache__/
 training_log.csv
 *.log
 artifacts/
+Final-Year-Project-Midterm-Report.pdf
 isaaclab_repo/
 SF_TRON_Ext/model/
 model/NN_Model/*_ckpt*.pth
