@@ -1,0 +1,16 @@
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.idea/
+.vscode/
+training_log.csv
+*.log
+artifacts/
+isaaclab_repo/
+SF_TRON_Ext/model/
+model/NN_Model/*_ckpt*.pth
+model/NN_Model/estimator_ckpt*.pth
+model/NN_Model/*_tmp.pth
+model/NN_Model/*_debug.pth
+model/NN_Model/*_sanity*.pth
+model/NN_Model/*_smoke*.pth
