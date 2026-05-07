@@ -4,8 +4,10 @@ Run with Isaac Sim: & "E:\IsaacSim-5.1.0\python.bat" evaluate_comparison.py
 Compares:
 - baseline: estimator-input residual policy with f_hat = 0
 - estimator: residual policy with f_hat input
+- optional legacy: old 231-dim actor1.pth residual policy
 
-This does not compare against the legacy 231-dim actor1.pth residual policy.
+Legacy comparison is opt-in with --include-legacy because it uses the old
+231-dim residual policy, not the current estimator-input policy.
 
 Metrics:
 - Fall rate (termination %)
@@ -30,10 +32,10 @@ def evaluate(mode, env, AC_trained, AC, estimator=None, num_episodes=20):
     """Run evaluation episodes and collect metrics.
 
     Args:
-        mode: 'baseline' (no estimator) or 'estimator' (with f_hat)
+        mode: 'baseline' (f_hat=0), 'estimator' (with f_hat), or 'legacy'
         num_episodes: number of episodes to evaluate
     """
-    assert mode in ("baseline", "estimator"), f"Unknown mode: {mode}"
+    assert mode in ("baseline", "estimator", "legacy"), f"Unknown mode: {mode}"
 
     env.prim_initialization(reset_all=True)
 
@@ -59,7 +61,10 @@ def evaluate(mode, env, AC_trained, AC, estimator=None, num_episodes=20):
             state = env.get_current_observations()
             history = env.update_estimator_history(state)
 
-            if mode == "estimator":
+            if mode == "legacy":
+                f_hat = torch.zeros(env.agents_num, PPO_Config.EstimatorParam.latent_dim, device=env.device)
+                residual_state = state
+            elif mode == "estimator":
                 with torch.no_grad():
                     f_hat = estimator.predict(history)
                 residual_state = env.augment_state_with_estimate(state, f_hat)
@@ -86,11 +91,7 @@ def evaluate(mode, env, AC_trained, AC, estimator=None, num_episodes=20):
                 else:
                     force_mse_no_push.append(mse)
 
-            next_state = env.get_next_observations()
-            next_residual_state = env.augment_state_with_estimate(
-                next_state, f_hat if mode == "estimator" else torch.zeros_like(f_hat)
-            )
-
+            env.get_next_observations()
             reward, over, extra_over = env.compute_reward()
             reward_sum += reward.mean().item()
 
@@ -130,10 +131,13 @@ def evaluate(mode, env, AC_trained, AC, estimator=None, num_episodes=20):
     }
 
 
-def print_comparison(baseline, estimator_result):
+def print_comparison(baseline, estimator_result, legacy_result=None):
     """Print a comparison table."""
     print("\n" + "=" * 60)
-    print("COMPARISON: Baseline vs Estimator")
+    if legacy_result is None:
+        print("COMPARISON: Baseline vs Estimator")
+    else:
+        print("COMPARISON: Legacy vs Baseline vs Estimator")
     print("=" * 60)
     metrics = [
         ("Fall Rate", "fall_rate", ".4f"),
@@ -144,13 +148,23 @@ def print_comparison(baseline, estimator_result):
         ("Force MSE (push)", "force_mse_push", ".4f"),
         ("Force MSE (no push)", "force_mse_no_push", ".4f"),
     ]
-    print(f"{'Metric':<25} {'Baseline':>12} {'Estimator':>12} {'Delta':>10}")
-    print("-" * 60)
-    for label, key, fmt in metrics:
-        b = baseline[key]
-        e = estimator_result[key]
-        delta = e - b
-        print(f"{label:<25} {b:>12{fmt}} {e:>12{fmt}} {delta:>+10{fmt}}")
+    if legacy_result is None:
+        print(f"{'Metric':<25} {'Baseline':>12} {'Estimator':>12} {'Delta':>10}")
+        print("-" * 60)
+        for label, key, fmt in metrics:
+            b = baseline[key]
+            e = estimator_result[key]
+            delta = e - b
+            print(f"{label:<25} {b:>12{fmt}} {e:>12{fmt}} {delta:>+10{fmt}}")
+    else:
+        print(f"{'Metric':<25} {'Legacy231':>12} {'Baseline234':>12} {'Estimator':>12} {'Est-B':>10}")
+        print("-" * 76)
+        for label, key, fmt in metrics:
+            l = legacy_result[key]
+            b = baseline[key]
+            e = estimator_result[key]
+            delta = e - b
+            print(f"{label:<25} {l:>12{fmt}} {b:>12{fmt}} {e:>12{fmt}} {delta:>+10{fmt}}")
     print("=" * 60)
 
     # Success criteria check
@@ -166,6 +180,22 @@ def print_comparison(baseline, estimator_result):
         print(f"  [3] Force MSE (push) = {estimator_result['force_mse_push']:.4f}")
         print("      -> (check if decreasing during training)")
 
+    if legacy_result is not None:
+        print(f"  [legacy] Old actor1.pth fall rate = {legacy_result['fall_rate']:.4f}")
+        print("      -> legacy uses the 231-dim residual policy and is not f_hat=0 baseline")
+
+
+def load_legacy_residual_policy():
+    """Load the old 231-dim actor1.pth residual policy without changing defaults."""
+    estimator_enabled = PPO_Config.EstimatorParam.enabled
+    PPO_Config.EstimatorParam.enabled = False
+    try:
+        legacy_ac = Actor_Critic(PPO_Config, Env_Config, index=1)
+        legacy_ac.load_best_model()
+    finally:
+        PPO_Config.EstimatorParam.enabled = estimator_enabled
+    return legacy_ac
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compare f_hat=0 baseline and estimator-input policy.")
@@ -174,6 +204,11 @@ if __name__ == "__main__":
     parser.add_argument("--steps", type=int, default=None)
     parser.add_argument("--terrain-rows", type=int, default=None)
     parser.add_argument("--terrain-cols", type=int, default=None)
+    parser.add_argument(
+        "--include-legacy",
+        action="store_true",
+        help="Also evaluate the old 231-dim actor1.pth residual policy.",
+    )
     args = parser.parse_args()
 
     if args.agents is not None:
@@ -189,11 +224,16 @@ if __name__ == "__main__":
     num_episodes = args.episodes
 
     print("Baseline definition: f_hat=0 with the 234-dim estimator residual policy input.")
-    print("Legacy actor1.pth is not loaded because it expects the old 231-dim input.")
+    if args.include_legacy:
+        print("Legacy definition: old 231-dim actor1.pth residual policy.")
+    else:
+        print("Legacy actor1.pth is not loaded unless --include-legacy is set.")
     print(f"Running {num_episodes} evaluation episodes per mode...\n")
 
     AC_trained = Actor_Critic(PPO_Config, Env_Config, index=0)
     AC_trained.load_best_model()
+
+    AC_legacy = load_legacy_residual_policy() if args.include_legacy else None
 
     AC = Actor_Critic(PPO_Config, Env_Config, index=1)
     AC.load_best_model()
@@ -204,10 +244,16 @@ if __name__ == "__main__":
 
     env = Tron_Env(Env_Config, Robot_Config, PPO_Config)
 
+    legacy = None
+    if args.include_legacy:
+        print("--- Legacy residual policy (actor1.pth, 231-dim) ---")
+        legacy = evaluate("legacy", env, AC_trained, AC_legacy, estimator=None, num_episodes=num_episodes)
+        print("")
+
     print("--- Baseline (no estimator) ---")
     baseline = evaluate("baseline", env, AC_trained, AC, estimator=None, num_episodes=num_episodes)
 
     print("\n--- Estimator (with f_hat) ---")
     est = evaluate("estimator", env, AC_trained, AC, estimator=estimator, num_episodes=num_episodes)
 
-    print_comparison(baseline, est)
+    print_comparison(baseline, est, legacy_result=legacy)

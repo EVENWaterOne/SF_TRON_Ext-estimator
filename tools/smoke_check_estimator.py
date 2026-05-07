@@ -22,14 +22,22 @@ def main():
 
     base_ac = Actor_Critic(PPO_Config, Env_Config, index=0)
     residual_ac = Actor_Critic(PPO_Config, Env_Config, index=1)
+    estimator_enabled = PPO_Config.EstimatorParam.enabled
+    PPO_Config.EstimatorParam.enabled = False
+    try:
+        legacy_residual_ac = Actor_Critic(PPO_Config, Env_Config, index=1)
+    finally:
+        PPO_Config.EstimatorParam.enabled = estimator_enabled
 
     assert estimate.shape == (batch_size, PPO_Config.EstimatorParam.latent_dim)
     assert base_ac.state_dim == PPO_Config.CriticParam.base_state_dim
     assert residual_ac.state_dim == PPO_Config.CriticParam.residual_state_dim
+    assert legacy_residual_ac.state_dim == PPO_Config.CriticParam.base_state_dim
 
     print("estimator output:", tuple(estimate.shape))
     print("base policy state_dim:", base_ac.state_dim)
     print("residual policy state_dim:", residual_ac.state_dim)
+    print("legacy residual policy state_dim:", legacy_residual_ac.state_dim)
     print("smoke check passed")
 
 

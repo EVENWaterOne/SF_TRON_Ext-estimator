@@ -425,3 +425,36 @@ git 状态：
 
 - Isaac Sim 脚本直接用 `E:\IsaacSim-5.1.0\python.bat` 运行时，需要显式设置项目 `PYTHONPATH`，否则会报 `ModuleNotFoundError: No module named 'isaaclab.app'`。
 - 已验证的沙盒外命令使用了 `PYTHONPATH` 指向本仓库和 `isaaclab_repo\source\...` 各模块。
+
+## 13. 2026-05-07 Legacy Baseline 与更长 Sanity Check
+
+已完成：
+
+- `evaluate_comparison.py` 新增 `--include-legacy`，可选评估旧 `actor1.pth` 的 231 维 residual policy。
+- 默认 `evaluate_comparison.py` 语义保持不变：baseline 仍是 234 维 estimator-input residual policy 下的 `f_hat=0`。
+- `tools/smoke_check_estimator.py` 已检查三种维度：
+  - base policy: 231
+  - estimator residual policy: 234
+  - legacy residual policy: 231
+- `.\run_tests.bat quick` 已通过，输出包含 `legacy residual policy state_dim: 231`。
+- 三路评估 smoke 已通过：
+  - 命令：`evaluate_comparison.py 1 --agents 10 --steps 10 --terrain-rows 3 --terrain-cols 3 --include-legacy`
+  - 输出列明确为 `Legacy231`、`Baseline234`、`Estimator`。
+  - 本次 smoke fall rate 均为 `0.0000`，只说明流程和标签语义跑通。
+- 更长 sanity check 已通过：
+  - 命令：`tools\training_sanity_check.py --agents 100 --steps 50 --episodes 50`
+  - `reward_mean_avg=0.138678`
+  - `estimator_loss_last=192.888153`
+  - `fall_rate_avg=0.026684`
+  - 无 NaN，checkpoint 写入 `artifacts/sanity_check`。
+
+注意：
+
+- 50 episode sanity check 仍不是正式性能实验，只能作为链路稳定性证据。
+- legacy baseline 是旧 231 维 `actor1.pth`，不要和 `f_hat=0` 的 234 维 baseline 混用。
+- 外力 API deprecated warning 仍存在，暂不迁移。
+
+下一步入口：
+
+- 提交 `evaluate_comparison.py`、`tools/smoke_check_estimator.py` 和本 handoff 更新。
+- 后续可规划正式评估：多 episode、多 seed、固定扰动设置，并分别报告 `Legacy231`、`Baseline234`、`Estimator`。
