@@ -488,3 +488,32 @@ git 状态：
 - 沙盒外运行 minimum formal run：
   - `evaluate_comparison.py 5 --agents 100 --steps 50 --terrain-rows 3 --terrain-cols 3 --include-legacy`
 - 将结果按 `Legacy231`、`Baseline234`、`Estimator` 分别记录；仍不得把单次 formal run 写成最终性能结论。
+
+## 16. 2026-05-07 Minimum Formal Run 结果
+
+已完成：
+
+- `.\run_tests.bat quick` 已通过。
+- minimum formal run 已在沙盒外通过：
+  - `evaluate_comparison.py 5 --agents 100 --steps 50 --terrain-rows 3 --terrain-cols 3 --include-legacy`
+- 新增 `FORMAL_EVALUATION_RESULTS.md`，记录正式实验 Run 1。
+
+Run 1 summary:
+
+- `Legacy231` fall rate: `0.0103`
+- `Baseline234` fall rate: `0.0276`
+- `Estimator` fall rate: `0.0288`
+- `Estimator - Baseline234` avg reward delta: `-0.0137`
+- `Estimator` force MSE during push: `302.5451`
+- `Estimator` force MSE no push: `0.0012`
+
+当前解释：
+
+- 三路正式评估流程跑通，模式标签没有混淆。
+- 本次 minimum formal run 不显示 estimator 相对 `Baseline234` 的性能提升；fall rate 和 avg reward 都略差。
+- 当前只能写：estimator integration runnable, but this run does not show a stable performance improvement.
+
+下一步入口：
+
+- 提交 `FORMAL_EVALUATION_PLAN.md`、`FORMAL_EVALUATION_RESULTS.md`、`SESSION_HANDOFF.md`。
+- 后续正式评估应扩大 episodes 或 repeated seeds，再判断性能趋势。

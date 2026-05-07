@@ -50,7 +50,11 @@ Record the exact command, commit hash, model source, terrain rows/cols, agents, 
 
 ## Current Defaults
 
-- Current documented baseline commit: `acda0d9 Document formal evaluation plan`.
+- Current documented baseline commit: `6957518 Update progress after formal plan commit`.
 - Runtime assets come from root `model/...`.
 - `SF_TRON_Ext/model/` remains ignored duplicate candidate data.
 - Deprecated `set_external_force_and_torque` warning remains technical debt and is not part of this formal evaluation.
+
+## Result Log
+
+- Run 1 results are recorded in `FORMAL_EVALUATION_RESULTS.md`.
