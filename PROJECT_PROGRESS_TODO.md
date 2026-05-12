@@ -36,3 +36,11 @@
 - 已完成的是“系统搭建、工程可信度、评估语义修正、第一条 formal evaluation 记录”；未完成的是“重复正式实验、稳定性统计、论文结论”。
 - 根目录 `model/...` 继续作为运行资产源。
 - Isaac Sim 实验默认沙盒外运行，并显式设置项目 `PYTHONPATH`。
+
+## 2026-05-12 更新
+
+- `.\run_tests.bat quick` 已重新通过，轻量工程基线仍然有效。
+- 扩大 formal evaluation 到 `episodes=10` 的 Run 2 已尝试两次，但两次都在 Isaac Sim 启动阶段发生 Windows access violation，未产生 comparison table。
+- 因为 Run 2 没有有效指标，当前性能结论不变：Run 1 仍是唯一有效 formal result，暂未显示 estimator 相对 `Baseline234` 的稳定性能提升。
+- 当前总体进度仍约为 **72%**：工程链路和评估语义完成，正式实验已开始，但扩大实验被 Isaac Sim/RTX-Hydra 启动崩溃阻塞。
+- 下一步优先级从“直接扩大 episode”调整为“先稳定 Isaac Sim 启动环境，再重复 10 episode formal run”。

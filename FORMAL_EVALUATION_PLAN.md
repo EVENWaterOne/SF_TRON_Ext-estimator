@@ -58,3 +58,4 @@ Record the exact command, commit hash, model source, terrain rows/cols, agents, 
 ## Result Log
 
 - Run 1 results are recorded in `FORMAL_EVALUATION_RESULTS.md`.
+- Run 2 expanded attempt on 2026-05-12 used 10 episodes but is recorded as invalid/blocked because Isaac Sim crashed during startup before producing a comparison table.

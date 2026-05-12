@@ -517,3 +517,33 @@ Run 1 summary:
 
 - 提交 `FORMAL_EVALUATION_PLAN.md`、`FORMAL_EVALUATION_RESULTS.md`、`SESSION_HANDOFF.md`。
 - 后续正式评估应扩大 episodes 或 repeated seeds，再判断性能趋势。
+
+## 17. 2026-05-12 扩大 Formal Evaluation 尝试
+
+已完成：
+
+- `.\run_tests.bat quick` 已重新通过。
+- 尝试扩大 formal evaluation：
+  - `evaluate_comparison.py 10 --agents 100 --steps 50 --terrain-rows 3 --terrain-cols 3 --include-legacy`
+- 该命令尝试两次，均未产生有效 comparison table。
+
+当前阻塞：
+
+- 两次尝试都在 Isaac Sim 启动阶段发生 Windows access violation。
+- 崩溃出现在 Isaac Sim / Kit RTX-Hydra viewport 初始化路径，早于正式评估三组模式运行。
+- 观察到的 NVIDIA driver 版本为 `596.36`。
+- 崩溃堆栈包含 `rtx.scenedb.plugin.dll`、`carb.scenerenderer-rtx.plugin.dll`、`omni.hydra.rtx.plugin.dll` 等模块。
+- 崩溃 dump 写入 `E:\IsaacSim-5.1.0\kit\data\Kit\Isaac-Sim\5.1\...`。
+- 崩溃后发现过残留 `kit` 进程，已停止/清理。
+
+当前解释：
+
+- Run 2 是无效/blocked formal run，不更新性能结论。
+- Run 1 仍是当前唯一有效 formal evaluation 结果。
+- 目前仍只能写：estimator integration runnable, but the available formal result does not show a stable performance improvement.
+
+下一步入口：
+
+- 先稳定 Isaac Sim 启动问题，再重复 10 episode formal run。
+- 可优先检查驱动/RTX-Hydra/viewport 初始化相关问题，或重启后复跑同一命令。
+- 不要把本次 Isaac Sim 启动崩溃解释为 estimator 性能结果。
